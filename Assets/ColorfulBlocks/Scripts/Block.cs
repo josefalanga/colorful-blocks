@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ColorfulBlocks.Scripts
 {
-    public class Block
+    public class Block : IDisposable
     {
         public string Name;
         private Sprite Sprite { get; set; }
@@ -17,6 +17,11 @@ namespace ColorfulBlocks.Scripts
             Sprite = map.GetSprite(Name);
             Instance.Setup(Sprite);
             Instance.OnClick += ()=> OnClick?.Invoke(Position);
+        }
+
+        public void Dispose()
+        {
+            Instance.Dispose();
         }
     }
 }

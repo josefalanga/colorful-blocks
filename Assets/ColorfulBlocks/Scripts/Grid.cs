@@ -42,22 +42,44 @@ namespace ColorfulBlocks.Scripts
             if (!_grid.TryGetValue(pos, out var origin)) return Array.Empty<(Vector2Int, Block)>();
 
             var directions = new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-            var matches = new List<(Vector2Int, Block)> { (pos, origin) }; // include self
+            var visited = new HashSet<Vector2Int>();
+            var queue = new Queue<Vector2Int>();
+            var results = new List<(Vector2Int, Block)>();
 
-            foreach (var dir in directions)
+            queue.Enqueue(pos);
+            visited.Add(pos);
+
+            while (queue.Count > 0)
             {
-                var neighbor = pos + dir;
-                if (_grid.TryGetValue(neighbor, out var block) && block.Name == origin.Name)
-                    matches.Add((neighbor, block));
+                var current = queue.Dequeue();
+                results.Add((current, _grid[current]));
+
+                foreach (var dir in directions)
+                {
+                    var neighbor = current + dir;
+                    if (!visited.Contains(neighbor) &&
+                        _grid.TryGetValue(neighbor, out var block) &&
+                        block.Name == origin.Name)
+                    {
+                        visited.Add(neighbor);
+                        queue.Enqueue(neighbor);
+                    }
+                }
             }
 
-            return matches.ToArray();
+            return results.ToArray();
         }
 
         public void Remove(List<Vector2Int> positions)
         {
             foreach (var pos in positions)
-                _grid.Remove(pos);
+            {
+                if (_grid.TryGetValue(pos, out var block))
+                {
+                    block.Dispose();
+                    _grid.Remove(pos);
+                }
+            }
         }
 
         public void Compress()

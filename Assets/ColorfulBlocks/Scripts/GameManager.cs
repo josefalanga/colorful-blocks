@@ -17,7 +17,6 @@ namespace ColorfulBlocks.Scripts
         [SerializeField] private BlockMap blockMap;
         [SerializeField] private GameObject blockContainer;
 
-        [SerializeField] private Button moveButton;
         [SerializeField] private TMP_Text movesText;
         [SerializeField] private TMP_Text scoreText;
         [SerializeField] private GameObject gameOverPanel;
@@ -38,21 +37,8 @@ namespace ColorfulBlocks.Scripts
         {
             _grid = new Grid();
             blockMap.Initialize();
-            moveButton.onClick.AddListener(FakeMove);
             replayButton.onClick.AddListener(Reset);
             Reset();
-        }
-
-        private void FakeMove()
-        {
-            _moves--;
-            _score += 10;
-            if (_moves <= 0)
-            {
-                _isGameOver = true;
-            }
-
-            UpdateUI();
         }
 
         private void Reset()
@@ -98,25 +84,23 @@ namespace ColorfulBlocks.Scripts
 
         private void Clicked(Vector2Int pos)
         {
+            //TODO: disable UI to prevent interaction while wait happens
             _moves--;
+            if (_moves <= 0)
+            {
+                _isGameOver = true;
+            }
             var neighbors = _grid.GetMatchingNeighbors(pos);
             var positions = new List<Vector2Int>();
             _score += neighbors.Length;
             
             foreach (var neighbor in neighbors)
             {
-                //could use pooling to avoid memory pressure
-                Destroy(neighbor.Item2.Instance);
                 positions.Add(neighbor.Item1);
             }
             
             StartCoroutine(ClickedCoroutine(positions));
-            _grid.Remove(positions);
             
-            _grid.Compress();
-            _grid.Refill(seed);
-
-            UpdateUI();
         }
 
         private IEnumerator ClickedCoroutine(List<Vector2Int> positions)
@@ -131,6 +115,9 @@ namespace ColorfulBlocks.Scripts
             
             _grid.Refill(seed);
             UpdateGrid();
+            
+            yield return new WaitForSeconds(1);
+            UpdateUI();
         }
     }
 }
