@@ -16,6 +16,7 @@ namespace ColorfulBlocks.Scripts
         [SerializeField] private BlockUI blockPrefab;
         [SerializeField] private BlockMap blockMap;
         [SerializeField] private GameObject blockContainer;
+        [SerializeField] private CanvasGroup canvasGroup;
 
         [SerializeField] private TMP_Text movesText;
         [SerializeField] private TMP_Text scoreText;
@@ -84,7 +85,6 @@ namespace ColorfulBlocks.Scripts
 
         private void Clicked(Vector2Int pos)
         {
-            //TODO: disable UI to prevent interaction while wait happens
             _moves--;
             if (_moves <= 0)
             {
@@ -105,19 +105,22 @@ namespace ColorfulBlocks.Scripts
 
         private IEnumerator ClickedCoroutine(List<Vector2Int> positions)
         {
+            canvasGroup.blocksRaycasts = false;
+            
             _grid.Remove(positions);
             UpdateGrid();
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(.5f);
             
             _grid.Compress();
             UpdateGrid();
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(.5f);
             
             _grid.Refill(seed);
             UpdateGrid();
             
-            yield return new WaitForSeconds(1);
             UpdateUI();
+            
+            canvasGroup.blocksRaycasts = true;
         }
     }
 }
