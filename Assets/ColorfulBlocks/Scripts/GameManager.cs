@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Debug = System.Diagnostics.Debug;
 
 namespace ColorfulBlocks.Scripts
 {
@@ -68,18 +70,32 @@ namespace ColorfulBlocks.Scripts
         {
             _grid.ForEach((pos, block) =>
             {
+                var appeared = false;
                 if (block.Instance == null)
                 {
                     block.Instance = Instantiate(blockPrefab, blockContainer.transform);
                     block.Setup(blockMap);
                     block.OnClick += Clicked;
+                    appeared = true;
                 }
                 
-                block.Position = pos;
+                
                 var rt = block.Instance.transform as RectTransform;
-                rt.anchoredPosition = new Vector2(pos.x * blockSize.x, pos.y * (blockSize.y - 15));
-                rt.anchoredPosition += new Vector2(blockSize.x / 2f, blockSize.y / 2f);
+                Debug.Assert(rt != null, nameof(rt) + " != null");
                 rt.sizeDelta = blockSize;
+                
+                var target = new Vector2(pos.x * blockSize.x, pos.y * (blockSize.y - 15));
+                target += new Vector2(blockSize.x / 2f, blockSize.y / 2f);
+                
+                if (appeared)
+                {
+                    rt.anchoredPosition = target;
+                    rt.DOPunchScale(Vector2.one * 0.2f, .5f);
+                }
+                else
+                {
+                    rt.DOAnchorPos(target, .5f).SetEase(Ease.OutBounce);
+                }
             });
         }
 
