@@ -285,6 +285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8376358ed441e05a9ac8f73ac350c18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  fallSpeed: 750
   seed: -1
   initialMoves: 5
   gridSize: {x: 5, y: 6}

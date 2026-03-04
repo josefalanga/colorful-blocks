@@ -5,12 +5,12 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Debug = System.Diagnostics.Debug;
 
 namespace ColorfulBlocks.Scripts
 {
     public class GameManager : MonoBehaviour
     {
+        [SerializeField] private int fallSpeed = 750;
         [SerializeField] private int seed = -1;
         [SerializeField] private int initialMoves = 5;
         [SerializeField] private Vector2Int gridSize = new(5, 6);
@@ -54,49 +54,83 @@ namespace ColorfulBlocks.Scripts
             _grid.Generate(gridSize, blockMap, seed);
 
             UpdateUI();
+            UpdateGrid();
         }
 
         private void UpdateUI()
         {
-            UpdateGrid();
-
             movesText.text = _moves.ToString();
             scoreText.text = _score.ToString("N", Nfi);
-
             gameOverPanel.SetActive(_isGameOver);
+        }
+
+        private Vector2 GetTarget(Vector2Int pos)
+        {
+            var target = new Vector2(pos.x * blockSize.x, pos.y * (blockSize.y - 15));
+            target += new Vector2(blockSize.x / 2f, blockSize.y / 2f);
+            return target;
         }
 
         private void UpdateGrid()
         {
+            // First pass: instantiate new blocks and group them by column
+            var newBlocksByColumn = new Dictionary<int, List<(Vector2Int pos, Block block)>>();
+
             _grid.ForEach((pos, block) =>
             {
-                var appeared = false;
                 if (block.Instance == null)
                 {
                     block.Instance = Instantiate(blockPrefab, blockContainer.transform);
                     block.Setup(blockMap);
                     block.OnClick += Clicked;
-                    appeared = true;
-                }
-                
-                
-                var rt = block.Instance.transform as RectTransform;
-                Debug.Assert(rt != null, nameof(rt) + " != null");
-                rt.sizeDelta = blockSize;
-                
-                var target = new Vector2(pos.x * blockSize.x, pos.y * (blockSize.y - 15));
-                target += new Vector2(blockSize.x / 2f, blockSize.y / 2f);
-                
-                if (appeared)
-                {
-                    rt.anchoredPosition = target;
-                    rt.DOPunchScale(Vector2.one * 0.2f, .5f);
+
+                    var rt = block.Instance.transform as RectTransform;
+                    rt.sizeDelta = blockSize;
+                    rt.localScale = Vector3.zero;
+
+                    if (!newBlocksByColumn.ContainsKey(pos.x))
+                        newBlocksByColumn[pos.x] = new List<(Vector2Int, Block)>();
+                    newBlocksByColumn[pos.x].Add((pos, block));
                 }
                 else
                 {
-                    rt.DOAnchorPos(target, .5f).SetEase(Ease.OutBounce);
+                    // Existing blocks just move to their new position
+                    var rt = block.Instance.transform as RectTransform;
+                    rt.sizeDelta = blockSize;
+                    rt.DOAnchorPos(GetTarget(pos), .5f).SetEase(Ease.OutBounce);
                 }
             });
+
+            // Second pass: animate new blocks per column as a single falling unit
+            var topY = gridSize.y * (blockSize.y - 15) + blockSize.y;
+
+            foreach (var (col, blocks) in newBlocksByColumn)
+            {
+                // Find the lowest block in this column (smallest y = bottom)
+                var lowestTarget = float.MaxValue;
+                foreach (var (pos, _) in blocks)
+                    lowestTarget = Mathf.Min(lowestTarget, GetTarget(pos).y);
+
+                // Offset so the bottom-most block spawns just above the grid top
+                var spawnOffset = topY - lowestTarget;
+
+                foreach (var (pos, block) in blocks)
+                {
+                    var target = GetTarget(pos);
+                    var spawnPos = new Vector2(target.x, target.y + spawnOffset);
+
+                    var rt = block.Instance.transform as RectTransform;
+                    rt.anchoredPosition = spawnPos;
+
+                    var distance = spawnOffset; // all blocks in column travel same distance
+                    var duration = distance / fallSpeed;
+
+                    var seq = DOTween.Sequence();
+                    seq.Append(rt.DOScale(1.2f, .15f).SetEase(Ease.OutQuad));
+                    seq.Append(rt.DOScale(1f, .1f).SetEase(Ease.InQuad));
+                    seq.Join(rt.DOAnchorPos(target, duration).SetEase(Ease.OutBounce));
+                }
+            }
         }
 
         private void Clicked(Vector2Int pos)
