@@ -10,18 +10,20 @@ namespace ColorfulBlocks.Scripts
         private Dictionary<Vector2Int, Block> _grid = new();
         private Vector2Int _gridSize;
         private BlockMap _map;
+        private int _seed;
 
         public void Generate(Vector2Int gridSize, BlockMap map, int seed)
         {
             _gridSize = gridSize;
             _map = map;
+            _seed = seed;
             foreach (var kvp in _grid)
             {
                kvp.Value.Dispose(); 
             }
             _grid.Clear();
 
-            var random = new Random(seed);
+            var random = new Random(_seed);
             var names = map.Names;
 
             for (var x = 0; x < gridSize.x; x++)
@@ -111,9 +113,9 @@ namespace ColorfulBlocks.Scripts
             }
         }
 
-        public void Refill(int seed)
+        public void Refill()
         {
-            var random = new Random(seed);
+            var random = new Random(_seed);
             var names = _map.Names;
 
             for (var x = 0; x < _gridSize.x; x++)

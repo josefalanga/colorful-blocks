@@ -46,12 +46,13 @@ namespace ColorfulBlocks.Scripts
 
         private void Reset()
         {
-            if (seed < 0)
-                seed = Random.Range(0, int.MaxValue);
+            var playSeed = seed;
+            if (playSeed < 0)
+                playSeed = Random.Range(0, int.MaxValue);
             _moves = initialMoves;
             _score = 0;
             _isGameOver = false;
-            _grid.Generate(gridSize, blockMap, seed);
+            _grid.Generate(gridSize, blockMap, playSeed);
 
             UpdateUI();
             UpdateGrid();
@@ -165,7 +166,7 @@ namespace ColorfulBlocks.Scripts
             UpdateGrid();
             yield return new WaitForSeconds(.5f);
             
-            _grid.Refill(seed);
+            _grid.Refill();
             UpdateGrid();
             
             UpdateUI();
