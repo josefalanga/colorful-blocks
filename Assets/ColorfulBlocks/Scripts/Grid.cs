@@ -15,6 +15,10 @@ namespace ColorfulBlocks.Scripts
         {
             _gridSize = gridSize;
             _map = map;
+            foreach (var kvp in _grid)
+            {
+               kvp.Value.Dispose(); 
+            }
             _grid.Clear();
 
             var random = new Random(seed);
